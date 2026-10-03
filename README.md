@@ -1,6 +1,6 @@
 # OKS Test Scene (Unity)
  
-A simple Unity scene for testing a roll optokinetic stimulus (OKS) at different frequencies and amplitudes. It was built as a practice and test tool for the OKS component of a larger multisensory self-orientation paradigm ([lab / project name]), mainly to check whether corner frequencies derived from published SVV time constants give a perceptually reasonable stimulus.
+A simple Unity scene for testing a roll optokinetic stimulus (OKS) at different frequencies and amplitudes. It was built as a practice and test tool for the OKS component of a larger multisensory self-orientation paradigm (NC4 lab), mainly to check whether corner frequencies derived from published SVV time constants give a perceptually reasonable stimulus.
  
 This is a test build, not an experiment. No data are collected.
  
