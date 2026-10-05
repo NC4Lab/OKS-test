@@ -54,7 +54,7 @@ public class OKSField : MonoBehaviour
     void InitializeUI()
     {
         // Set up slider ranges for log-scale frequency
-        frequencySlider.minValue = -2f;
+        frequencySlider.minValue = Mathf.Log10(0.01f);
         frequencySlider.maxValue = Mathf.Log10(0.5f);
         frequencySlider.value = Mathf.Log10(frequencyHz);
         frequencySlider.onValueChanged.AddListener(OnFrequencySliderChanged);
