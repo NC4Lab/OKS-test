@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using TMPro;
 
 public class OKSField : MonoBehaviour
 {
@@ -23,29 +26,110 @@ public class OKSField : MonoBehaviour
     public bool showPanel = true;
     public bool showCrosshair = true;
 
+    [Header("UI References")]
+    public Slider frequencySlider;
+    public TextMeshProUGUI frequencyLabel;
+    public Slider amplitudeSlider;
+    public TextMeshProUGUI amplitudeLabel;
+    public TextMeshProUGUI cycleInfo;
+    public TextMeshProUGUI legend;
+    public Button oksButton;
+    public Button gvsButton;
+    public Button button01;
+    public Button button02;
+    public Button button05;
+    public Image controlPanel;
+    public GameObject crosshair;
+
     private float phase;
+    private CanvasGroup panelCanvasGroup;
 
     void Start()
     {
         SpawnDots();
+        InitializeUI();
+        UpdateUILabels();
+    }
+
+    void InitializeUI()
+    {
+        // Set up slider ranges for log-scale frequency
+        frequencySlider.minValue = -2f;
+        frequencySlider.maxValue = Mathf.Log10(0.5f);
+        frequencySlider.value = Mathf.Log10(frequencyHz);
+        frequencySlider.onValueChanged.AddListener(OnFrequencySliderChanged);
+
+        // Set up amplitude slider
+        amplitudeSlider.minValue = 2f;
+        amplitudeSlider.maxValue = 50f;
+        amplitudeSlider.value = amplitudeDeg;
+        amplitudeSlider.onValueChanged.AddListener(OnAmplitudeSliderChanged);
+
+        // Connect preset buttons
+        oksButton.onClick.AddListener(() => SetPreset(0.02f));
+        gvsButton.onClick.AddListener(() => SetPreset(0.04f));
+        button01.onClick.AddListener(() => SetPreset(0.1f));
+        button02.onClick.AddListener(() => SetPreset(0.25f));
+        button05.onClick.AddListener(() => SetPreset(0.5f));
+
+        // Get CanvasGroup for hide/show effect
+        panelCanvasGroup = controlPanel.GetComponent<CanvasGroup>();
+        if (panelCanvasGroup == null) panelCanvasGroup = controlPanel.gameObject.AddComponent<CanvasGroup>();
+
+        // Initialize crosshair visibility
+        if (crosshair != null)
+            crosshair.SetActive(showCrosshair);
+
+        // Set initial legend text
+        legend.text = "Keys: 1-5 presets, Tab hides panel, R resets view";
+    }
+
+    void OnFrequencySliderChanged(float logValue)
+    {
+        frequencyHz = Mathf.Pow(10f, logValue);
+        UpdateUILabels();
+    }
+
+    void OnAmplitudeSliderChanged(float value)
+    {
+        amplitudeDeg = value;
+        UpdateUILabels();
+    }
+
+    void UpdateUILabels()
+    {
+        frequencyLabel.text = $"Frequency  {frequencyHz:0.000} Hz";
+        amplitudeLabel.text = $"Amplitude  {amplitudeDeg:0}°";
+        cycleInfo.text = $"At {frequencyHz:0.000} Hz, one cycle takes {1f / frequencyHz:0.00} s. {Note()}";
+    }
+
+    public void SetPreset(float hz)
+    {
+        frequencyHz = hz;
+        frequencySlider.value = Mathf.Log10(hz);
+        UpdateUILabels();
     }
 
     [ContextMenu("Respawn Dots")]
     void SpawnDots()
     {
+        // Clear all existing dots
         for (int i = transform.childCount - 1; i >= 0; i--)
             Destroy(transform.GetChild(i).gameObject);
 
         Random.InitState(seed);
+        // Distribute points on a sphere around the player using the golden angle (spherical Fibonacci lattice).
         float goldenAngle = Mathf.PI * (3f - Mathf.Sqrt(5f));
 
         for (int i = 0; i < dotCount; i++)
         {
             Vector3 dir;
+            // Default: Randomly scattered points on a sphere as in other OKS simulators.
             if (randomScatter)
             {
                 dir = Random.onUnitSphere;
             }
+            // Option for evenly spaced points on a sphere using the golden angle
             else
             {
                 float y = 1f - 2f * i / (dotCount - 1f);
@@ -64,6 +148,9 @@ public class OKSField : MonoBehaviour
     {
         HandleKeys();
 
+        // Detect if pointer is over UI panel
+        PointerOverPanel = showPanel && (EventSystem.current.IsPointerOverGameObject() || GUIUtility.hotControl != 0);
+
         phase += 2f * Mathf.PI * frequencyHz * Time.deltaTime;
         float angle = amplitudeDeg * Mathf.Sin(phase);
         float sign = reverseDirection ? -1f : 1f;
@@ -72,12 +159,19 @@ public class OKSField : MonoBehaviour
 
     void HandleKeys()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1)) frequencyHz = 0.02f;   // OKS mean corner
-        if (Input.GetKeyDown(KeyCode.Alpha2)) frequencyHz = 0.04f;   // GVS mean corner
-        if (Input.GetKeyDown(KeyCode.Alpha3)) frequencyHz = 0.1f;
-        if (Input.GetKeyDown(KeyCode.Alpha4)) frequencyHz = 0.25f;
-        if (Input.GetKeyDown(KeyCode.Alpha5)) frequencyHz = 0.5f;
-        if (Input.GetKeyDown(KeyCode.Tab)) showPanel = !showPanel;
+        if (Input.GetKeyDown(KeyCode.Alpha1)) SetPreset(0.02f);   // OKS mean corner
+        if (Input.GetKeyDown(KeyCode.Alpha2)) SetPreset(0.04f);   // GVS mean corner
+        if (Input.GetKeyDown(KeyCode.Alpha3)) SetPreset(0.1f);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) SetPreset(0.25f);
+        if (Input.GetKeyDown(KeyCode.Alpha5)) SetPreset(0.5f);
+        if (Input.GetKeyDown(KeyCode.Tab)) TogglePanel();
+    }
+
+    void TogglePanel()
+    {
+        showPanel = !showPanel;
+        panelCanvasGroup.alpha = showPanel ? 1f : 0f;
+        panelCanvasGroup.blocksRaycasts = showPanel;
     }
 
     string Note()
@@ -85,53 +179,5 @@ public class OKSField : MonoBehaviour
         if (frequencyHz <= 0.02f) return "At or below OKS mean corner.";
         if (frequencyHz <= 0.04f) return "Between OKS and GVS mean corners.";
         return "Above both mean corners, in the roll-off region.";
-    }
-
-    void OnGUI()
-    {
-        if (showCrosshair) DrawCrosshair();
-
-        Rect panel = new Rect(10, 10, 380, 230);
-        Vector2 mouse = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
-        PointerOverPanel = showPanel && (panel.Contains(mouse) || GUIUtility.hotControl != 0);
-        if (!showPanel) return;
-
-        GUI.skin.label.wordWrap = true;
-        GUILayout.BeginArea(panel, GUI.skin.box);
-
-        GUILayout.Label($"Frequency  {frequencyHz:0.000} Hz");
-        float logF = Mathf.Log10(frequencyHz);
-        float newLog = GUILayout.HorizontalSlider(logF, -2f, Mathf.Log10(0.5f));
-        if (!Mathf.Approximately(newLog, logF)) frequencyHz = Mathf.Pow(10f, newLog);
-
-        GUILayout.Label($"Amplitude  {amplitudeDeg:0}°");
-        amplitudeDeg = GUILayout.HorizontalSlider(amplitudeDeg, 2f, 50f);
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("OKS corner")) frequencyHz = 0.02f;
-        if (GUILayout.Button("GVS corner")) frequencyHz = 0.04f;
-        if (GUILayout.Button("0.1 Hz")) frequencyHz = 0.1f;
-        if (GUILayout.Button("0.25 Hz")) frequencyHz = 0.25f;
-        if (GUILayout.Button("0.5 Hz")) frequencyHz = 0.5f;
-        GUILayout.EndHorizontal();
-
-        GUILayout.Label($"At {frequencyHz:0.000} Hz, one cycle takes {1f / frequencyHz:0.00} s. {Note()}");
-        GUILayout.Label("Keys: 1-5 presets, Tab hides panel, R resets view");
-
-        GUILayout.EndArea();
-    }
-
-    void DrawCrosshair()
-    {
-        float cx = Screen.width * 0.5f;
-        float cy = Screen.height * 0.5f;
-        float len = Screen.height * 0.075f;           // matches the simulator's proportions
-        float th = Mathf.Max(1f, Screen.height / 540f);
-
-        Color prev = GUI.color;
-        GUI.color = new Color(1f, 1f, 1f, 0.12f);
-        GUI.DrawTexture(new Rect(cx - len, cy - th * 0.5f, 2f * len, th), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(cx - th * 0.5f, cy - len, th, 2f * len), Texture2D.whiteTexture);
-        GUI.color = prev;
     }
 }
