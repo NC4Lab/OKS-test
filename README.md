@@ -16,7 +16,7 @@ This is a test build, not an experiment. No data are collected.
 |---|---|
 | Left mouse drag | Look around |
 | R | Reset view |
-| 1 to 5 | Frequency presets: 0.02, 0.04, 0.1, 0.25, 0.5 Hz |
+| 1 to 5 | Frequency presets: 0.02, 0.04, 0.1, 0.2, 0.5 Hz |
 | Tab | Show / hide the control panel |
 | On-screen sliders | Frequency (log scale, 0.01 to 0.5 Hz) and amplitude (2 to 30 degrees) |
  
