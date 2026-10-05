@@ -69,7 +69,7 @@ public class OKSField : MonoBehaviour
         oksButton.onClick.AddListener(() => SetPreset(0.02f));
         gvsButton.onClick.AddListener(() => SetPreset(0.04f));
         button01.onClick.AddListener(() => SetPreset(0.1f));
-        button02.onClick.AddListener(() => SetPreset(0.25f));
+        button02.onClick.AddListener(() => SetPreset(0.20f));
         button05.onClick.AddListener(() => SetPreset(0.5f));
 
         // Get CanvasGroup for hide/show effect
@@ -162,7 +162,7 @@ public class OKSField : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha1)) SetPreset(0.02f);   // OKS mean corner
         if (Input.GetKeyDown(KeyCode.Alpha2)) SetPreset(0.04f);   // GVS mean corner
         if (Input.GetKeyDown(KeyCode.Alpha3)) SetPreset(0.1f);
-        if (Input.GetKeyDown(KeyCode.Alpha4)) SetPreset(0.25f);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) SetPreset(0.20f);
         if (Input.GetKeyDown(KeyCode.Alpha5)) SetPreset(0.5f);
         if (Input.GetKeyDown(KeyCode.Tab)) TogglePanel();
     }
