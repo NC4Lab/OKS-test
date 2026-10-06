@@ -18,7 +18,7 @@ public class OKSField : MonoBehaviour
     public int seed = 12345;              // same seed = same dot field every run
 
     [Header("Motion")]
-    [Range(0.01f, 0.5f)] public float frequencyHz = 0.02f;
+    [Range(0.001f, 0.5f)] public float frequencyHz = 0.02f;
     [Range(2f, 50f)] public float amplitudeDeg = 30f;
     public bool reverseDirection = false;
 
@@ -53,10 +53,11 @@ public class OKSField : MonoBehaviour
 
     void InitializeUI()
     {
-        // Set up slider ranges for log-scale frequency
-        frequencySlider.minValue = Mathf.Log10(0.01f);
-        frequencySlider.maxValue = Mathf.Log10(0.5f);
-        frequencySlider.value = Mathf.Log10(frequencyHz);
+        // Set up frequency slider with 0.001 Hz steps (0.001 to 0.5 Hz = 1 to 500 steps)
+        frequencySlider.minValue = 1;
+        frequencySlider.maxValue = 500;
+        frequencySlider.wholeNumbers = true;
+        frequencySlider.value = Mathf.Round(frequencyHz / 0.001f);
         frequencySlider.onValueChanged.AddListener(OnFrequencySliderChanged);
 
         // Set up amplitude slider
@@ -69,7 +70,7 @@ public class OKSField : MonoBehaviour
         oksButton.onClick.AddListener(() => SetPreset(0.02f));
         gvsButton.onClick.AddListener(() => SetPreset(0.04f));
         button01.onClick.AddListener(() => SetPreset(0.1f));
-        button02.onClick.AddListener(() => SetPreset(0.20f));
+        button02.onClick.AddListener(() => SetPreset(0.2f));
         button05.onClick.AddListener(() => SetPreset(0.5f));
 
         // Get CanvasGroup for hide/show effect
@@ -84,9 +85,9 @@ public class OKSField : MonoBehaviour
         legend.text = "Keys: 1-5 presets, Tab hides panel, R resets view";
     }
 
-    void OnFrequencySliderChanged(float logValue)
+    void OnFrequencySliderChanged(float sliderValue)
     {
-        frequencyHz = Mathf.Pow(10f, logValue);
+        frequencyHz = sliderValue * 0.001f;
         UpdateUILabels();
     }
 
@@ -106,7 +107,7 @@ public class OKSField : MonoBehaviour
     public void SetPreset(float hz)
     {
         frequencyHz = hz;
-        frequencySlider.value = Mathf.Log10(hz);
+        frequencySlider.value = Mathf.Round(hz / 0.001f);
         UpdateUILabels();
     }
 
